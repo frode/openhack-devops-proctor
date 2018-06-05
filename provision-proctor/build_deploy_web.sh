@@ -6,18 +6,23 @@ IFS=$'\n\t'
 # -o: prevents errors in a pipeline from being masked
 # IFS new value is less likely to cause confusing bugs when looping arrays or arguments (e.g. $@)
 
-usage() { echo "Usage: build_deploy_web.sh -m <proctor name> -d <dnsURL>" 1>&2; exit 1; }
+usage() { echo "Usage: build_deploy_web.sh -m <proctor name> -d <dnsURL> -a <apiURL>" 1>&2; exit 1; }
 
 declare proctorName=""
+declare dnsURL=""
+declare apiURL=""
 
 # Initialize parameters specified from command line
-while getopts ":m:d:" arg; do
+while getopts ":m:d:a:" arg; do
     case "${arg}" in
         m)
             proctorName=${OPTARG}
         ;;
         d)
             dnsURL=${OPTARG}
+        ;;
+        a)
+            apiURL=${OPTARG}
         ;;
     esac
 done
@@ -49,16 +54,23 @@ if [ -z "$proctorName" ] || [ -z "$dnsURL" ]; then
     usage
 fi
 
+if [[ -z "$apiURL" ]]; then
+    echo "Enter the Azure functions api URL i.e. https://mysite.azurewebsites.net :"
+    read apiURL
+    [[ "${apiURL:?}" ]]
+fi
+
 declare resourceGroupName="${proctorName}-rg"
 declare registryName="${proctorName}acr"
 
 #DEBUG
 echo $resourceGroupName
 echo $dnsURL
+echo $apiURL
 echo $proctorName
 echo -e '\n'
 
-#get the acr repsotiory id to tag image with.
+#get the acr repository id to tag image with.
 ACR_ID=`az acr list -g $resourceGroupName --query "[].{acrLoginServer:loginServer}" --output json | jq .[].acrLoginServer | sed 's/\"//g'`
 
 echo "ACR ID: "$ACR_ID
@@ -75,7 +87,7 @@ echo "TAG: "$TAG
 
 pushd ../leaderboard/web
 
-docker build . -t $TAG
+docker build . -e API-URL=$apiURL -t $TAG
 
 docker push $TAG
 echo "Successfully pushed image: "$TAG
