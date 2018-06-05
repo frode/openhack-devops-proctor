@@ -46,7 +46,7 @@ export class DashboardComponent implements OnInit {
         );
       });
 
-
+// TODO: cleanup this code
 //    this.Convert();
 //    console.log("length:" + this.viewTeams.length);
   }

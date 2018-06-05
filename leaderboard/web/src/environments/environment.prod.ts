@@ -5,6 +5,6 @@
  */
 export const environment = {
   production: true,
-  backendUrl: "https://removeohprep20.azurewebsites.net/api/SampleFunc"
+  backendUrl: process.env.API_URL || ''
 };
 
